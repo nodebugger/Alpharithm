@@ -22,24 +22,26 @@ You can import the provided collection to test the endpoints:
 ### 🔹 Task 1: Cash Flow Statement
 **Endpoint:**  
 ```http
-GET /api/cash-flow-statement
+GET /api/cash-flow
 ```
 
 Query Parameters:
-companyid: 1 (required)
-fromDate: 2025-01-01 (required)
-toDate: 2025-01-31 (required)
+- companyid: 1 (required)
+- fromDate: 2025-01-01 (required)
+- toDate: 2025-01-31 (required)
 
 
 Task 2: Bank Reconciliation Statement
 **Endpoint:**
 ```http 
-GET /api/bank-reconciliation-statement
+GET /api/bank-reconciliation
 ```
 
 Query Parameters:
-companyid: 1 (required)
-bankaccount: MainBank (required)
+- companyid: 1 (required)
+- bankaccount: MainBank (required)
 
-accounting-api/server.js # All API code lives here
-task-deliverables/ # contains screenshots of tests on browser (in pretty-print format)
+---
+
+- accounting-api/server.js # All API code lives here
+- task-deliverables/ # contains screenshots of tests on browser (in pretty-print format)
