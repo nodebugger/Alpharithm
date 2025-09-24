@@ -19,11 +19,12 @@ You can import the provided collection to test the endpoints:
 
 ---
 
-### 🔹 Task 1: Cash Flow Statement
+### Task 1: Cash Flow Statement
 **Endpoint:**  
 ```http
 GET /api/cash-flow
 ```
+- example query: http://localhost:3000/api/cash-flow?companyid=1&fromDate=2025-01-01&toDate=2025-01-31
 
 Query Parameters:
 - companyid: 1 (required)
@@ -31,11 +32,12 @@ Query Parameters:
 - toDate: 2025-01-31 (required)
 
 
-Task 2: Bank Reconciliation Statement
+### Task 2: Bank Reconciliation Statement
 **Endpoint:**
 ```http 
 GET /api/bank-reconciliation
 ```
+- example query: http://localhost:3000/api/bank-reconciliation?companyid=1&bankaccount=MainBank
 
 Query Parameters:
 - companyid: 1 (required)
