@@ -1,0 +1,1 @@
+Find the output in this postman documentation: https://documenter.getpostman.com/view/45896640/2sB3QCRtHU
