@@ -5,12 +5,16 @@ const { Pool } = require('pg');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Accept JSON bodies (useful for future endpoints and consistent middleware)
+app.use(express.json());
+
+// Pool config: coerce DB port to a number with a sensible default
 const pool = new Pool({
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
     database: process.env.DB_DATABASE,
     password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
+    port: parseInt(process.env.DB_PORT, 10) || 5432,
 });
 console.log(`Connecting to database: ${process.env.DB_DATABASE}`);
 
@@ -19,16 +23,28 @@ app.get('/', (req, res) => {
 });
 
 app.get('/test-db', async (req, res) => {
+    let client;
     try {
-        const client = await pool.connect();
+        client = await pool.connect();
         res.send('Database connection successful!');
-        client.release();
     } catch (err) {
         console.error('Database connection error:', err);
         res.status(500).send('Database connection failed.');
+    } finally {
+        if (client) {
+            try { client.release(); } catch (releaseErr) { /* ignore release errors */ }
+        }
     }
 });
 
+/**
+ * Get the opening balance for a company before a given date.
+ * Returns 0 when no rows or balance is not a finite number.
+ *
+ * @param {string|number} companyid
+ * @param {string} toDate - ISO date string (exclusive)
+ * @returns {Promise<number>}
+ */
 const getOpeningBalance = async (companyid, toDate) => {
     const query = `
         SELECT
@@ -39,7 +55,9 @@ const getOpeningBalance = async (companyid, toDate) => {
             AND date < $2;
     `;
     const result = await pool.query(query, [companyid, toDate]);
-    return parseFloat(result.rows[0].balance) || 0;
+    const raw = result && result.rows && result.rows[0] && result.rows[0].balance;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
 };
 
 app.get('/api/cash-flow', async (req, res) => {
@@ -143,8 +161,8 @@ app.get('/api/bank-reconciliation', async (req, res) => {
 
     const describedItems = reconcilingItems.map(item => {
       let description = '';
-      if (item.reference === 'CHQ102') {
-        description = 'Cheque CHQ102 has not yet cleared thee bank';
+            if (item.reference === 'CHQ102') {
+                description = 'Cheque CHQ102 has not yet cleared the bank';
       } else if (item.reference === 'CHQ104') {
         description = 'Bank charges not yet recorded in the ledger';
       }
@@ -167,6 +185,20 @@ app.get('/api/bank-reconciliation', async (req, res) => {
   }
 });
         
+// Graceful shutdown: close DB pool before exiting
+const shutdown = async (signal) => {
+    console.log(`Received ${signal}. Closing database pool and exiting.`);
+    try {
+        await pool.end();
+    } catch (err) {
+        console.error('Error while shutting down pool:', err);
+    }
+    process.exit(0);
+};
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
