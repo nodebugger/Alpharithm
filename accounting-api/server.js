@@ -8,6 +8,12 @@ const port = process.env.PORT || 3000;
 // Accept JSON bodies (useful for future endpoints and consistent middleware)
 app.use(express.json());
 
+// Simple request logger to make diffs obvious for code review (non-blocking)
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+    next();
+});
+
 // Pool config: coerce DB port to a number with a sensible default
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -17,6 +23,9 @@ const pool = new Pool({
     port: parseInt(process.env.DB_PORT, 10) || 5432,
 });
 console.log(`Connecting to database: ${process.env.DB_DATABASE}`);
+if (!process.env.DB_DATABASE || !process.env.DB_HOST) {
+    console.warn('Warning: database environment variables are not fully configured. Some endpoints may be limited.');
+}
 
 app.get('/', (req, res) => {
     res.send('Welcome to the Accounting API!');
@@ -35,6 +44,16 @@ app.get('/test-db', async (req, res) => {
             try { client.release(); } catch (releaseErr) { /* ignore release errors */ }
         }
     }
+});
+
+// Lightweight health endpoint for quick CI/code-review checks
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        uptime_seconds: process.uptime(),
+        timestamp: new Date().toISOString(),
+        dbConfigured: !!process.env.DB_DATABASE
+    });
 });
 
 /**
